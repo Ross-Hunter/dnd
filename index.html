@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.rawgit.com/konvajs/konva/2.0.2/konva.min.js"></script>
+    <meta charset="utf-8">
+    <title>Konva  Drag and Drop Demo</title>
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #F0F0F0;
+        }
+
+        h2 {
+          text-align: center;
+        }
+
+        #container {
+          width: 400px;
+          height: 400px;
+          margin: 0 auto;
+          background: url('https://s7d2.scene7.com/is/image/Baudville/BV_96531_TEMP');
+          background-size: contain;
+          background-repeat: no-repeat;
+        }
+
+        #composite-container {
+          width: 400px;
+          height: 400px;
+          margin: 0 auto;
+        }
+
+        #composite {
+          width: 100%;
+        }
+
+        .columns {
+          display: flex;
+          justify-content: space-around;
+        }
+    </style>
+</head>
+<body>
+  <div class="columns">
+    <div class="column">
+      <h2>Drag Here!</h2>
+      <div id="container">
+      </div>
+    </div>
+    <div class="column">
+      <h2>Composited Here!</h2>
+      <div id="composite-container">
+        <img id="composite" src="" />
+      </div>
+    </div>
+  </div>
+<script>
+    var stage;
+    var width = 400;
+    var height = 400;
+
+    var base_url = 'https://s7d2.scene7.com/is/image/'
+
+    var icon_src = 'Baudville/BV_76914G_TEMP';
+    var background_src = 'Baudville/BV_96531_TEMP';
+
+    function drawImage(imageObj) {
+        stage = new Konva.Stage({
+            container: 'container',
+            width: width,
+            height: height
+        });
+
+        var layer = new Konva.Layer();
+        var icon = new Konva.Image({
+            image: imageObj,
+            x: stage.getWidth() / 2 - 50,
+            y: 0,
+            width: 100,
+            height: 100,
+            name: 'icon',
+            draggable: true
+        });
+
+        // add cursor styling
+        icon.on('mouseover', function() {
+            document.body.style.cursor = 'pointer';
+        });
+        icon.on('mouseout', function() {
+            document.body.style.cursor = 'default';
+        });
+
+        function doComposite() {
+          var mousePos = stage.getPointerPosition();
+          if (mousePos) {
+            var x = mousePos.x;
+            var y = mousePos.y;
+          } else {
+            var x = 0;
+            var y = 0;
+          }
+
+          var rotation = icon.rotation();
+          console.log('x: ' + x + ', y: ' + y);
+
+          var composite_src = base_url + background_src + '/';
+
+          composite_src += `?layer=1&src=is{${icon_src}}&pos=${x},${y}&rotate=${rotation}`;
+
+          document.getElementById('composite').src = composite_src
+        }
+
+        icon.on('dragend touchend', function() {
+          doComposite();
+        })
+
+        doComposite();
+
+        layer.add(icon);
+        stage.add(layer);
+        stage.on('click touch', function (e) {
+          // if click on empty area - remove all transformers
+          if (e.target === stage) {
+            stage.find('Transformer').destroy();
+            layer.draw();
+            return;
+          }
+          // do nothing if clicked NOT on our rectangles
+          if (!e.target.hasName('icon')) {
+            return;
+          }
+          // remove old transformers
+          // TODO: we can skip it if current rect is already selected
+          stage.find('Transformer').destroy();
+
+          // create new transformer
+          var tr = new Konva.Transformer();
+          layer.add(tr);
+          tr.attachTo(e.target);
+          layer.draw();
+        })
+    }
+    var imageObj = new Image();
+    imageObj.onload = function() {
+      drawImage(this);
+    };
+    imageObj.src = base_url + icon_src;
+</script>
+
+</body>
+</html>
